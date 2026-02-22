@@ -1,0 +1,156 @@
+[ENABLE]
+aobscanmodule(INJECT,Minecraft.Windows.exe,33 ED 48 8B 0E)
+alloc(newmem,$1000,INJECT)
+alloc(TurnKill,$1000)
+registersymbol(TurnKill)
+TurnKill:
+  dd (float)5,(float)57.29577951
+TurnKill+30:
+  dd (float)-57.29577951
+TurnKill+40:
+  dd #2
+TurnKill+50:
+  dd #1
+TurnKill+60:
+  dd (float)inf
+Text5:
+dd #1
+newmem:
+  db 33 ED 48 8B 0E
+  mov [mxdsd],(float)0
+  cmp [TurnKill+8],1
+  je TurnKill2
+  cmp [key+52*4],1
+  je TurnKill2
+  mov [mxdsd],(float)0
+  mov [TurnKill+60],(float)inf
+  jmp INJECT+5
+TurnKill2:
+  call pushtemp
+  mov r15,[TurnKill+28]
+  cmp rdi,[LocalPlayer]
+  je return1
+  cmp [rdi+270],#15
+  jbe return
+  mov r10,[rdi+260]
+  cmp [r10+A],'play'
+  jne return
+  cmp [TurnKill+90],1
+  jne TurnKill1
+  mov r10,[rdi+2A0]
+  cmp [r10+0],(float)0
+  je return
+  cmp [r10+4],(float)0
+  je return
+TurnKill1:
+  mov [HeathTag],rdi
+  call GetHeath
+  cmp [Heath],#1
+  jb return
+  mov r9,[rdi+298]
+  mov r10,[rdi+290]
+  mov r11,[LocalPlayer]
+  mov r11,[r11+290]
+
+  movss xmm1,[r10+00]
+  subss xmm1,[r11+00]
+  movss [TurnKill+10],xmm1
+  mulss xmm1,xmm1
+  movss xmm2,[r9+04]
+  subss xmm2,[r11+04]
+  movss [TurnKill+14],xmm2
+  mulss xmm2,xmm2
+  addss xmm2,xmm1
+  movss xmm1,[r10+08]
+  subss xmm1,[r11+08]
+  movss [TurnKill+18],xmm1
+  mulss xmm1,xmm1
+  addss xmm1,xmm2
+  sqrtss xmm1,xmm1
+  movss [TurnKill+1C],xmm1
+  comiss xmm1,[TurnKill+00]
+  ja return
+  comiss xmm1,[TurnKill+60]
+  ja return
+  movss [TurnKill+60],xmm1
+
+  mov [mxdsd],(float)1
+
+  fld [TurnKill+14]
+  fld [TurnKill+1C]
+  fpatan
+  fmul [TurnKill+30]
+  fstp [mxdy]
+
+  fld [TurnKill+10]
+  fld [TurnKill+18]
+  fpatan
+  fmul [TurnKill+04]
+  fstp [mxdxz]
+
+  inc [TurnKill+28]
+TurnAttack:
+  cmp [TurnKill+24],#0
+  je ECAttack
+  cmp [entity2C],#0
+  //je return
+
+  inc [TurnKill+44]
+  mov edx,[TurnKill+40]
+  cmp [TurnKill+44],edx
+  jb return
+
+  mov rdx,rdi
+  call Attack
+  call Swing
+
+  mov edx,[TurnKill+50]
+  inc [TurnKill+54]
+  cmp [TurnKill+54],edx
+  jb TurnAttack
+
+  mov [TurnKill+44],#0
+  mov [TurnKill+54],#0
+
+ECAttack:
+  cmp [TurnKill+80],#0
+  je return
+  cmp [entity2c],#0
+  je return
+
+  inc [TurnKill+44]
+  mov edx,[TurnKill+40]
+  cmp [TurnKill+44],edx
+  jb return
+
+  mov [Click_],1
+  call Click
+
+  mov edx,[TurnKill+50]
+  inc [TurnKill+54]
+  cmp [TurnKill+54],edx
+  jb ECAttack
+
+  mov [TurnKill+44],#0
+  mov [TurnKill+54],#0
+
+  jmp return
+return1:
+  mov [TurnKill+60],(float)inf
+  mov [TurnKill+70],r15
+  mov [TurnKill+28],0
+return:
+  call poptemp
+  cmp [TurnKill+70],0
+  je INJECT+5
+  mov [mxdsd],(float)1
+  jmp INJECT+5
+INJECT:
+  jmp newmem
+[DISABLE]
+INJECT:
+  db 33 ED 48 8B 0E
+Text5:
+dd #1
+unregistersymbol(*)
+dealloc(*)
